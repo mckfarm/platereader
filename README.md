@@ -10,5 +10,7 @@ Prepare microplate layout and run assay ➡ retrieve output file from plate read
 Nutrient assays:
 Follow the format of the Excel file saved in the data folder. This spreadsheet can contain all of your data from start to finish of the workflow: microplate layout, sample IDs and dilutions, standards, results, and notes. I typically save the output text file from the Synergy HTX, then copy the absorbance values into an Excel file. An example of the microplate output is also in the data file.
 
+I also included a script for UV-VIS data processing. This pretty much follows the same format as the microplate script but a bit more simple.
+
 Intracellular polymer assays:
 in progress
