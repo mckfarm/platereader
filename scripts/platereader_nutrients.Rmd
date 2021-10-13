@@ -1,0 +1,156 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Calculating concentrations from plate reader outputs
+Inputs - plate reader layout, standards and well ids, plate reader output
+Outputs - readings in concentration units
+Code set up to show separate analyses from the same base Excel file, can be adapted for single assays as well
+
+Set up and file read in
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(readxl)
+library(broom)
+
+# input and output file path
+infile <- "~/1 School and Research/1 Northwestern/1 Research/2 Method Development/Nutrients/211012_plate/211012_plate.xlsx"
+outpath <- "~/1 School and Research/1 Northwestern/1 Research/2 Method Development/Nutrients/211012_plate/"
+
+```
+
+
+Processing data
+```{r}
+# read in raw absorbances
+abs_raw_no2 <- read_xlsx(infile, sheet="results_no2")
+abs_raw_po4 <- read_xlsx(infile, sheet="results_po4")
+
+# read in standards and plate layout
+## standards sheet consists of three columns - well id, sample id, and concentration
+## plate is the plate layout
+standards <- read_xlsx(infile, sheet="standards")
+plate <- read_xlsx(infile, sheet="plate_layout")
+dilution <- read_xlsx(infile, sheet="samples")
+
+### data processing ###
+
+# process plate layout sheet to get list of samples with well id
+samples <- plate %>% 
+  pivot_longer(cols = 2:ncol(.), values_to="label", names_to="column") %>%
+  mutate(well = paste(row, column, sep="")) %>%
+  select(-c(row,column)) %>%
+  drop_na() %>%
+  filter(stringr::str_detect(label, "blank|std", negate=TRUE)) %>%
+  left_join(.,dilution)
+
+# separate by nutrient
+samples_no2 <- samples %>%
+  filter(stringr::str_detect(label, "no2")) %>%
+  mutate(rowID = as.character(seq(1:nrow(.))))
+
+samples_po4 <- samples %>%
+  filter(stringr::str_detect(label, "po4")) %>%
+  mutate(rowID = as.character(seq(1:nrow(.))))
+
+standards_no2 <- standards %>%
+  filter(stringr::str_detect(label, "no2"))
+
+standards_po4 <- standards %>%
+  filter(stringr::str_detect(label, "po4"))
+
+# convert absorbances from plate reader to long format
+abs_long_no2 <- abs_raw_no2 %>% 
+  select(-c(Meas)) %>%
+  pivot_longer(cols = 2:ncol(.), values_to="abs", names_to="column") %>%
+  mutate(well = paste(row, column, sep="")) %>%
+  select(-c(row,column))
+
+abs_long_po4 <- abs_raw_po4 %>% 
+  select(-c(Meas)) %>% 
+  pivot_longer(cols = 2:ncol(.), values_to="abs", names_to="column") %>%
+  mutate(well = paste(row, column, sep="")) %>%
+  select(-c(row,column))
+
+# join absorbance reading to well id
+abs_vals_no2 <- samples_no2 %>%
+  left_join(.,abs_long_no2)
+
+abs_vals_po4 <- samples_po4 %>%
+  left_join(.,abs_long_po4)
+
+# join absorbance reading to standard
+standards_no2 <- standards_no2 %>%
+  left_join(.,abs_long_no2)
+
+standards_po4 <- standards_po4 %>%
+  left_join(.,abs_long_po4)
+
+# calibration curve
+calib_no2 <- lm(conc~abs, data=standards_no2)
+predict_no2 <- predict(calib_no2, newdata=abs_vals_no2)
+
+## save calibration values
+calib_no2_summary <- tidy(calib_no2)
+
+conc_no2 <- predict_no2 %>%
+  as.data.frame() %>%
+  rename("uM NO2" = ".") %>%
+  rownames_to_column("rowID") %>%
+  left_join(samples_no2, ., "rowID") %>%
+  select(-rowID)
+
+conc_no2$`mgL_N` <- conc_no2$`uM NO2`/1e6*46*14/46*1000*conc_no2$dil
+
+calib_po4 <- lm(conc~abs, data=standards_po4)
+predict_po4 <- predict(calib_po4, newdata=abs_vals_po4)
+
+## save calibration values
+calib_po4_summary <- tidy(calib_po4)
+
+conc_po4 <- predict_po4 %>%
+  as.data.frame() %>%
+  rename("uM PO4" = ".") %>%
+  rownames_to_column("rowID") %>%
+  left_join(samples_po4, ., "rowID") %>%
+  select(-rowID)
+
+conc_po4$`mgL_P` <- conc_po4$`uM PO4`/1e6*95*31/95*1000*conc_po4$dil
+
+```
+
+
+
+```{r}
+### save output ###
+write.csv(conc_no2, paste(outpath,"no2_result.csv",sep=""))
+write.csv(conc_po4, paste(outpath,"po4_result.csv",sep=""))
+write.csv(calib_no2_summary, paste(outpath,"no2_calib.csv",sep=""))
+write.csv(calib_po4_summary, paste(outpath,"po4_calib.csv",sep=""))
+
+
+### calibration curve visualization ###
+ggplot(standards_no2,aes(abs,conc)) +
+  geom_point() + 
+  stat_smooth(method = "lm", col = "red") +
+  theme_bw() +
+  ylab("concentration uM NO2") +
+  xlab("absorbance") + 
+  ggtitle("no2 calibration curve")
+
+ggsave(paste(outpath,"no2_curve.png",sep=""))
+
+ggplot(standards_po4,aes(abs,conc)) +
+  geom_point() + 
+  stat_smooth(method = "lm", col = "red") +
+  theme_bw() +
+  ylab("concentration uM PO4") +
+  xlab("absorbance") + 
+  ggtitle("po4 calibration curve")
+
+ggsave(paste(outpath,"po4_curve.png",sep=""))
+```
+
+
