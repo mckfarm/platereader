@@ -119,6 +119,13 @@ conc_po4 <- predict_po4 %>%
 
 conc_po4$`mgL_P` <- conc_po4$`uM PO4`/1e6*95*31/95*1000*conc_po4$dil
 
+# clean up output
+conc_no2 <- conc_no2 %>%
+  select(-dil)
+conc_po4 <- conc_po4 %>%
+  select(-dil)
+
+
 ```
 
 
