@@ -1,16 +1,11 @@
 # platereader
 
-Repository for plate reader analysis scripts for the Wells Lab. Microplate analyses run on Synergy HTX microplate reader in the Hartmann lab. Scripts designed for 96 well plates, though any plate size should be okay.
+Repository for my plate reader analysis scripts. All analyses run on Synergy HTX microplate reader in the Hartmann lab with 96 well plates.
 
-Workflow is as follows:
-
-Prepare microplate layout and run assay ➡ retrieve output file from plate reader ➡ estimate assay target from calibration curve
-
-
-Nutrient assays:
-Follow the format of the Excel file saved in the data folder. This spreadsheet can contain all of your data from start to finish of the workflow: microplate layout, sample IDs and dilutions, standards, results, and notes. I typically save the output text file from the Synergy HTX, then copy the absorbance values into an Excel file. An example of the microplate output is also in the data file.
+Nutrient assays:  
+Follow the format of the Excel file 211012_plate.xlsx. This spreadsheet can contain all of your data from start to finish of the workflow: microplate layout, sample IDs and dilutions, standards, results, and notes. I typically save the output text file from the Synergy HTX, then copy the absorbance values into an Excel file. An example of the microplate output is also in the data file. Methods details are provided in the Wells Lab methods folder in Sharepoint.
 
 I also included a script for UV-VIS data processing. This pretty much follows the same format as the microplate script but a bit more simple.
 
-Intracellular polymer assays:
-in progress
+Sudan Black PHA staining:  
+Follow the format of the Excel file. This spreadsheet can contain all of your data from start to finish of the workflow: microplate layout, sample IDs and dilutions, standards, results, and notes. I typically save the output text file from the Synergy HTX, then copy the absorbance values into an Excel file. An example of the microplate output is also in the data file.
